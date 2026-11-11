@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cổng Khảo sát Trực tuyến - Đoàn TNCS Hồ Chí Minh | khaosat.doanthanhnien.vn</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Thư viện đọc và phân tích file Word docx trên trình duyệt -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <!-- Tệp CSS tách biệt -->
+    <link rel="stylesheet" href="style.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        'doan-blue': '#005baa',
+                        'doan-darkblue': '#00407a',
+                        'doan-deep': '#00284d',
+                        'doan-red': '#da251d',
+                        'doan-yellow': '#ffcd00',
+                        'doan-light': '#eef5fc',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
+
+    <!-- Top Red Bar Cờ đỏ sao vàng -->
+    <div class="h-1.5 bg-gradient-to-r from-doan-red via-red-600 to-doan-yellow w-full"></div>
+
+    <!-- Header chính thức -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('portal')">
+                <!-- KHUNG LOGO HEADER (Khi có ảnh, bạn thay thẻ <i> bằng <img src="logo.png">) -->
+                <div class="w-12 h-12 rounded-2xl bg-doan-blue text-white flex items-center justify-center text-xl shadow-md border border-blue-400">
+                  <img src="logo.png" class="w-full h-full object-contain" alt="logo">
+                </div>
+                <div>
+                    <div class="text-[11px] font-bold text-doan-red tracking-wider uppercase">TRUNG ƯƠNG ĐOÀN TNCS HỒ CHÍ MINH</div>
+                    <div class="text-base sm:text-lg font-extrabold text-doan-blue leading-tight tracking-tight flex items-center gap-1">
+                        <span>CỔNG KHẢO SÁT THANH NIÊN</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Điều hướng 4 Tabs Chức Năng -->
+            <nav class="hidden md:flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+                <button id="btn-tab-portal" onclick="switchTab('portal')" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-doan-blue shadow transition flex items-center gap-2">
+                    <i class="fa-solid fa-compass"></i> Cổng khảo sát
+                </button>
+                <button id="btn-tab-analytics" onclick="switchTab('analytics')" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 transition flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie"></i> Thống kê 40 Đơn vị
+                </button>
+                <!-- Các tab Quản trị (mặc định ẩn với khách, chỉ hiện sau khi đăng nhập CMS) -->
+                <button id="btn-tab-builder" onclick="switchTab('builder')" class="admin-only hidden px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 transition items-center gap-2">
+                    <i class="fa-solid fa-shapes text-doan-blue"></i> 1. Tạo biểu mẫu
+                </button>
+                <button id="btn-tab-publish" onclick="switchTab('publish')" class="admin-only hidden px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 transition items-center gap-2">
+                    <i class="fa-solid fa-qrcode text-doan-blue"></i> 2. Xuất bản & QR
+                </button>
+            </nav>
+
+            <div class="flex items-center gap-2">
+                <!-- Nút cho Khách đăng nhập vào CMS -->
+                <button id="btn-header-login" onclick="switchTab('login')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3.5 py-2.5 rounded-xl border border-slate-300 transition flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-doan-blue"></i>
+                    <span>Cán bộ Đoàn CMS</span>
+                </button>
+
+                <!-- Thanh thông tin Cán bộ sau khi đăng nhập thành công -->
+                <div id="admin-user-badge" class="hidden items-center gap-2 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl">
+                    <div class="w-7 h-7 rounded-lg bg-doan-blue text-white flex items-center justify-center text-xs font-bold">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                    <div class="text-left hidden sm:block">
+                        <div class="text-[10px] font-bold text-doan-blue leading-none">Cán bộ Tuyên giáo TWD</div>
+                        <div class="text-[9px] text-slate-500 font-medium">Quyền Quản trị CMS</div>
+                    </div>
+                    <button onclick="handleAdminLogout()" title="Đăng xuất khỏi CMS" class="ml-1 text-slate-400 hover:text-doan-red text-xs p-1">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+
+                <button onclick="resetAllData()" title="Khôi phục dữ liệu rỗng ban đầu" class="text-slate-400 hover:text-red-500 p-2.5 transition">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Nội dung chính -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ============================================================== -->
+        <!-- MÀN HÌNH ĐĂNG NHẬP RIÊNG BIỆT CHO CÁN BỘ QUẢN TRỊ (CMS LOGIN) -->
+        <!-- ============================================================== -->
+        <div id="view-login" class="tab-view hidden max-w-md mx-auto my-6 space-y-6 animate-in fade-in zoom-in-95 duration-200">
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
+                <div class="bg-gradient-to-r from-doan-darkblue to-doan-blue p-8 text-center text-white space-y-2">
+                    <div class="w-16 h-16 rounded-2xl bg-white/10 mx-auto flex items-center justify-center text-3xl text-doan-yellow shadow-inner">
+                        <img src="logo.png" class="w-full h-full object-contain" alt="logo">
+                    </div>
+                    <h2 class="text-lg font-black uppercase tracking-wide">Cổng Đăng Nhập Quản Trị</h2>
+                    <p class="text-xs text-blue-100">Dành riêng cho Cán bộ Trung ương Đoàn phụ trách khảo sát</p>
+                </div>
+
+                <form onsubmit="handleAdminLogin(event)" class="p-8 space-y-5">
+                    <div id="login-error-msg" class="hidden p-3 bg-red-50 border border-red-200 text-doan-red text-xs font-bold rounded-xl flex items-center gap-2">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span>Tài khoản hoặc mật khẩu không chính xác!</span>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold text-slate-700">Tài khoản quản trị:</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 text-xs">
+                                <i class="fa-solid fa-user-shield"></i>
+                            </span>
+                            <input id="login-username" type="text" required placeholder="Nhập tài khoản quản trị..." value="admintuyengiaotwd" class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-doan-blue focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold text-slate-700">Mật khẩu:</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 text-xs">
+                                <i class="fa-solid fa-key"></i>
+                            </span>
+                            <input id="login-password" type="password" required placeholder="Nhập mật khẩu..." value="26031931" class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-doan-blue focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-blue-50/70 rounded-xl border border-blue-100 text-[11px] text-slate-600 space-y-1">
+                        <div class="font-bold text-doan-blue"><i class="fa-solid fa-circle-info mr-1"></i> Tài khoản thử nghiệm nghiệm thu:</div>
+                        <div>Tài khoản: <code class="font-mono bg-white px-1.5 py-0.5 rounded border border-blue-200 font-bold text-slate-800">admintuyengiaotwd</code></div>
+                        <div>Mật khẩu: <code class="font-mono bg-white px-1.5 py-0.5 rounded border border-blue-200 font-bold text-slate-800">26031931</code></div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-doan-blue hover:bg-doan-darkblue text-white font-extrabold py-3 rounded-xl text-xs shadow-lg transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập Quản trị CMS
+                    </button>
+                    
+                    <button type="button" onclick="switchTab('portal')" class="w-full text-slate-500 hover:text-slate-800 text-xs font-semibold py-1 transition text-center block">
+                        ← Quay lại Cổng khảo sát cho Đoàn viên
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- TAB 1: CỔNG KHẢO SÁT CÔNG KHAI (PORTAL) -->
+        <!-- ============================================================== -->
+        <div id="view-portal" class="tab-view block space-y-8">
+            <!-- Hero Section -->
+            <div class="relative bg-gradient-to-br from-doan-darkblue via-doan-blue to-blue-600 rounded-3xl p-8 sm:p-12 text-white shadow-xl overflow-hidden">
+                <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                    <div class="lg:col-span-8 space-y-4">
+                        <div class="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-semibold text-blue-100 border border-white/20">
+                            <span class="w-2 h-2 rounded-full bg-doan-yellow animate-ping"></span>
+                            Hệ thống tiếp nhận ý kiến thanh niên trực tuyến
+                        </div>
+                        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black leading-tight tracking-tight">
+                            LẮNG NGHE THANH NIÊN <br/>
+                            <span class="text-doan-yellow underline decoration-doan-red decoration-4 underline-offset-8">HÀNH ĐỘNG VÌ TƯƠNG LAI</span>
+                        </h1>
+                        <p class="text-blue-100 text-sm sm:text-base leading-relaxed max-w-2xl">
+                            Website trực tuyến của Trung ương Đoàn TNCS Hồ Chí Minh nhằm điều tra, khảo sát và tiếp nhận ý kiến đóng góp, sáng kiến của đoàn viên, thanh thiếu nhi cả nước.
+                        </p>
+                        <div class="flex flex-wrap items-center gap-3 pt-2">
+                            <button onclick="switchTab('analytics')" class="bg-doan-yellow hover:bg-yellow-400 text-slate-900 font-extrabold px-6 py-3.5 rounded-xl shadow-lg transition flex items-center gap-2 text-xs">
+                                <i class="fa-solid fa-chart-line text-doan-red"></i> Xem thống kê 40 Đơn vị
+                            </button>
+                            <button onclick="switchTab('login')" class="bg-white/15 hover:bg-white/25 text-white font-semibold px-5 py-3.5 rounded-xl border border-white/20 transition flex items-center gap-2 text-xs">
+                                <i class="fa-solid fa-lock"></i> Đăng nhập Cán bộ Quản trị
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-4 flex justify-center">
+                        <div class="relative bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/20 text-center shadow-2xl">
+                            <!-- KHUNG LOGO BANNER (Thay <i> bằng <img src="logo.png"> khi có file ảnh) -->
+                            <div class="w-32 h-32 mx-auto rounded-3xl bg-white/10 border-2 border-dashed border-white/30 flex items-center justify-center text-5xl text-doan-yellow">
+                             <img src="logo.png" class="w-full h-full object-contain" alt="logo">
+                            </div>
+                            <div class="mt-4 text-xs font-bold text-doan-yellow uppercase tracking-wider">Hệ thống mở diện rộng</div>
+                            <div class="text-xs text-blue-100 mt-1">Lọc linh hoạt 40 đơn vị trực thuộc</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chỉ số thống kê THỰC TẾ -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-blue-50 text-doan-blue flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <div id="stat-total-responses" class="text-2xl font-black text-slate-900">0</div>
+                        <div class="text-xs text-slate-500 font-medium uppercase">Lượt đóng góp ý kiến</div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                    </div>
+                    <div>
+                        <div id="stat-active-units" class="text-2xl font-black text-slate-900">0 / 40</div>
+                        <div class="text-xs text-slate-500 font-medium uppercase">Đơn vị đã tham gia</div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-black text-slate-900">100%</div>
+                        <div class="text-xs text-slate-500 font-medium uppercase">Dữ liệu thời gian thực</div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-red-50 text-doan-red flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-lock-open"></i>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-black text-slate-900">0</div>
+                        <div class="text-xs text-slate-500 font-medium uppercase">Không yêu cầu CCCD)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danh sách phiếu khảo sát -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-slate-900">Danh sách Khảo sát đang diễn ra</h2>
+                        <p class="text-xs text-slate-500">Các phiếu khảo sát do Ban tổ chức khởi tạo trong hệ thống</p>
+                    </div>
+                </div>
+
+                <div id="portal-empty-state" class="bg-white p-12 rounded-3xl border-2 border-dashed border-slate-300 text-center space-y-4">
+                    <div class="w-16 h-16 rounded-2xl bg-blue-50 text-doan-blue flex items-center justify-center text-3xl mx-auto">
+                        <i class="fa-regular fa-folder-open"></i>
+                    </div>
+                    <div class="max-w-md mx-auto">
+                        <h3 class="text-base font-extrabold text-slate-900">Chưa có biểu mẫu khảo sát nào được tạo</h3>
+                        <p class="text-xs text-slate-500 mt-1">Đoàn viên thanh niên vui lòng chờ Ban tổ chức xuất bản các đợt khảo sát mới nhất.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+                        <button onclick="switchTab('login')" class="bg-doan-blue hover:bg-doan-darkblue text-white text-xs font-bold px-5 py-3 rounded-xl transition shadow">
+                            <i class="fa-solid fa-shield-halved mr-1"></i> Dành cho Cán bộ Đoàn đăng nhập CMS
+                        </button>
+                    </div>
+                </div>
+
+                <div id="portal-surveys-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- TAB 2: STUDIO TẠO BIỂU MẪU (FORM BUILDER - DÀNH RIÊNG CHO QUẢN TRỊ) -->
+        <!-- ============================================================== -->
+        <div id="view-builder" class="tab-view hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-doan-blue uppercase">Phân hệ Cán bộ Đoàn CMS</span>
+                        <h2 class="text-xl font-extrabold text-slate-900">Thiết kế Biểu mẫu Khảo sát</h2>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">Hỗ trợ 2 cách tạo: Tự thiết lập câu hỏi hoặc Upload file Word (.docx) để hệ thống tự bóc tách biểu hỏi</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <label class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-file-word text-doan-blue"></i>
+                        <span>Tải file Word (.docx)</span>
+                        <input type="file" id="word-file-input" accept=".docx,.txt" onchange="handleWordFileUpload(event)" class="hidden">
+                    </label>
+
+                    <button onclick="loadSampleForumSurvey()" class="bg-red-50 text-doan-red hover:bg-red-100 text-xs font-bold px-4 py-2.5 rounded-xl border border-red-200 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-bolt"></i> Nạp mẫu Diễn đàn 2026
+                    </button>
+                    <button onclick="addQuestion()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> Thêm câu hỏi
+                    </button>
+                    <button onclick="saveSurveyForm()" class="bg-doan-blue hover:bg-doan-darkblue text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-floppy-disk"></i> Lưu & Xuất bản
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tiêu đề khảo sát và THỜI GIAN HIỆU LỰC -->
+            <div class="bg-white p-6 sm:p-8 rounded-2xl border-t-8 border-t-doan-blue border border-slate-200 shadow-sm space-y-5">
+                <input id="form-survey-title" type="text" placeholder="Tiêu đề biểu mẫu khảo sát (Ví dụ: Khảo sát ý kiến đoàn viên 2026)..." class="w-full text-xl font-black text-slate-900 border-0 border-b border-slate-200 focus:border-doan-blue focus:ring-0 p-1 placeholder-slate-400">
+                <textarea id="form-survey-desc" rows="2" placeholder="Mô tả mục đích, đơn vị phát động khảo sát..." class="w-full text-xs text-slate-600 border-0 border-b border-slate-200 focus:border-doan-blue focus:ring-0 p-1 placeholder-slate-400"></textarea>
+
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                            <i class="fa-regular fa-calendar-check text-doan-blue"></i>
+                            Thời gian bắt đầu có hiệu lực:
+                        </label>
+                        <input type="datetime-local" id="form-start-time" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-doan-blue">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                            <i class="fa-regular fa-calendar-xmark text-doan-red"></i>
+                            Thời gian kết thúc hiệu lực:
+                        </label>
+                        <input type="datetime-local" id="form-end-time" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-doan-blue">
+                    </div>
+                </div>
+            </div>
+
+            <div id="builder-questions-container" class="space-y-4"></div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- TAB 3: XUẤT BẢN & MÃ QR (SHARE / PUBLISH) -->
+        <!-- ============================================================== -->
+        <div id="view-publish" class="tab-view hidden space-y-6">
+            <div id="publish-empty-state" class="bg-white p-12 rounded-3xl border-2 border-dashed border-slate-300 text-center max-w-md mx-auto space-y-4">
+                <div class="w-16 h-16 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-3xl mx-auto">
+                    <i class="fa-solid fa-qrcode"></i>
+                </div>
+                <h3 class="font-extrabold text-base text-slate-900">Chưa có biểu mẫu nào được xuất bản</h3>
+                <p class="text-xs text-slate-500">Hãy vào tab "Tạo biểu mẫu" để thiết kế và xuất bản một phiếu khảo sát trước.</p>
+                <button onclick="switchTab('builder')" class="bg-doan-blue text-white text-xs font-bold px-5 py-2.5 rounded-xl">
+                    Chuyển đến Tạo biểu mẫu
+                </button>
+            </div>
+
+            <div id="publish-details-card" class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm text-center max-w-2xl mx-auto space-y-6 hidden">
+                <div class="w-16 h-16 bg-blue-50 text-doan-blue rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-sm">
+                    <i class="fa-solid fa-qrcode"></i>
+                </div>
+                <div>
+                    <span id="publish-survey-count" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-doan-blue border border-blue-200 uppercase">0 câu hỏi</span>
+                    <h2 id="publish-survey-title" class="text-2xl font-black text-slate-900 mt-2">Tiêu đề khảo sát</h2>
+                    <p id="publish-survey-desc" class="text-xs text-slate-500 mt-1 max-w-md mx-auto">Mô tả khảo sát</p>
+                </div>
+
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 inline-block shadow-inner">
+                    <div class="w-48 h-48 bg-white p-4 rounded-xl border border-slate-300 flex flex-col items-center justify-center mx-auto shadow-sm">
+                        <i class="fa-solid fa-qrcode text-8xl text-slate-900"></i>
+                        <span class="text-[11px] font-extrabold text-doan-blue mt-2 tracking-wide font-mono">khaosat.doanthanhnien.vn</span>
+                    </div>
+                    <div class="mt-4 flex gap-2 justify-center">
+                        <button onclick="alert('Đã sẵn sàng in Standee và tải mã QR cho tên miền khaosat.doanthanhnien.vn!')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-download"></i> Tải ảnh QR
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-2 text-left">
+                    <label class="text-xs font-bold text-slate-700">Đường dẫn liên kết làm bài trực tiếp chính thức:</label>
+                    <div class="flex items-center gap-2">
+                        <input id="publish-survey-link" type="text" readonly class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-mono text-doan-blue font-bold">
+                        <button onclick="navigator.clipboard.writeText(document.getElementById('publish-survey-link').value); alert('Đã sao chép liên kết chính thức https://khaosat.doanthanhnien.vn!');" class="bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold px-4 py-2.5 rounded-xl transition whitespace-nowrap">
+                            <i class="fa-regular fa-copy mr-1"></i> Sao chép
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex justify-center">
+                    <button onclick="openTakeSurveyModal()" class="bg-doan-yellow hover:bg-yellow-400 text-slate-900 font-extrabold px-8 py-3 rounded-xl shadow transition flex items-center gap-2 text-xs">
+                        <i class="fa-solid fa-paper-plane text-doan-red"></i> Trải nghiệm làm bài ngay
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- TAB 4: THỐNG KÊ & PHÂN TÍCH (ANALYTICS) -->
+        <!-- ============================================================== -->
+        <div id="view-analytics" class="tab-view hidden space-y-6">
+            <div id="analytics-empty-state" class="bg-white p-12 rounded-3xl border-2 border-dashed border-slate-300 text-center max-w-md mx-auto space-y-4">
+                <div class="w-16 h-16 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center text-3xl mx-auto">
+                    <i class="fa-solid fa-chart-pie"></i>
+                </div>
+                <h3 class="font-extrabold text-base text-slate-900">Chưa có dữ liệu phản hồi</h3>
+                <p class="text-xs text-slate-500">Chưa có lượt nộp bài nào được ghi nhận. Hãy thực hiện làm khảo sát để xem các biểu đồ phân tích và bảng số liệu xuất hiện trực tiếp.</p>
+                <button onclick="openTakeSurveyModal()" class="bg-doan-blue text-white text-xs font-bold px-5 py-2.5 rounded-xl">
+                    Làm khảo sát ngay
+                </button>
+            </div>
+
+            <div id="analytics-content" class="space-y-6 hidden">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center space-x-3 w-full sm:w-auto">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-doan-blue flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-filter"></i>
+                        </div>
+                        <div>
+                            <div class="font-extrabold text-sm text-slate-900">Lọc dữ liệu theo 40 Đơn vị trực thuộc</div>
+                            <div class="text-xs text-slate-500">Tổng số lượt nộp: <b id="analytics-total-count" class="text-doan-blue">0</b></div>
+                        </div>
+                    </div>
+                    <div class="w-full sm:w-80 flex items-center gap-2">
+                        <select id="analytics-unit-filter" onchange="applyAnalyticsFilter()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-doan-blue focus:outline-none">
+                            <option value="ALL">-- Tất cả 40 Đơn vị trực thuộc --</option>
+                        </select>
+                        <button id="btn-export-csv" onclick="exportResponsesCSV()" class="admin-only hidden bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition items-center gap-1.5 whitespace-nowrap">
+                            <i class="fa-solid fa-file-excel"></i> Xuất CSV
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <h3 class="font-extrabold text-sm text-slate-900">Số lượng phản hồi theo Đơn vị Tỉnh/Thành</h3>
+                        <div class="h-64">
+                            <canvas id="chartUnitsCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <h3 class="font-extrabold text-sm text-slate-900">Cơ cấu Nhóm tuổi người tham gia</h3>
+                        <div class="h-64">
+                            <canvas id="chartAgeCanvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="analytics-log-container" class="admin-only hidden bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                        <div>
+                            <h3 class="font-extrabold text-sm text-slate-900">Nhật ký bài nộp chi tiết (Báo cáo Nội bộ Quản trị)</h3>
+                            <p class="text-[11px] text-slate-500">Chỉ hiển thị cho Cán bộ Ban Tuyên giáo Trung ương Đoàn đã xác thực</p>
+                        </div>
+                        <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-semibold">Tự động cập nhật</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3.5 font-bold">Thời gian</th>
+                                    <th class="p-3.5 font-bold">Đơn vị</th>
+                                    <th class="p-3.5 font-bold">Biểu mẫu khảo sát</th>
+                                    <th class="p-3.5 font-bold text-center">Giới tính</th>
+                                    <th class="p-3.5 font-bold text-center">Độ tuổi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="analytics-log-tbody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ============================================================== -->
+    <!-- MODAL LÀM KHẢO SÁT ĐỘNG (THEO CÂU HỎI VỪA TẠO) -->
+    <!-- ============================================================== -->
+    <div id="take-survey-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+        <div class="bg-white w-full max-w-3xl max-h-[92vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            <div class="bg-gradient-to-r from-doan-darkblue to-doan-blue text-white px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-doan-yellow text-lg">
+                        <i class="fa-solid fa-feather-pointed"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold text-doan-yellow uppercase tracking-wider">TRƯNG CẦU Ý KIẾN THANH NIÊN</div>
+                        <div id="modal-survey-title" class="text-sm font-extrabold line-clamp-1">Phiếu khảo sát</div>
+                    </div>
+                </div>
+                <button onclick="closeTakeSurveyModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <div id="modal-survey-scroll" class="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
+                <form id="take-survey-form" onsubmit="handleSubmitResponse(event)" class="space-y-6">
+                    <p id="modal-survey-desc" class="text-xs text-slate-500 pb-2 border-b border-slate-100"></p>
+
+                    <div class="bg-blue-50/60 p-5 rounded-2xl border border-blue-100 space-y-4">
+                        <h4 class="text-xs font-bold text-doan-blue uppercase tracking-wider">Thông tin chung</h4>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-800 mb-1.5">
+                                Đơn vị Tỉnh/Thành đoàn hoặc Đoàn trực thuộc (40 đơn vị) <span class="text-doan-red">*</span>
+                            </label>
+                            <select id="modal-survey-unit" required class="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-doan-blue focus:outline-none"></select>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-800 mb-1.5">Giới tính:</label>
+                                <div class="flex items-center space-x-6 text-xs">
+                                    <label class="flex items-center space-x-2"><input type="radio" name="ans_gender" value="Nam" checked class="text-doan-blue"> <span>Nam</span></label>
+                                    <label class="flex items-center space-x-2"><input type="radio" name="ans_gender" value="Nữ" class="text-doan-blue"> <span>Nữ</span></label>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-800 mb-1.5">Nhóm tuổi:</label>
+                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <label class="flex items-center space-x-2"><input type="radio" name="ans_age" value="Dưới 18" class="text-doan-blue"> <span>Dưới 18</span></label>
+                                    <label class="flex items-center space-x-2"><input type="radio" name="ans_age" value="18-22" checked class="text-doan-blue"> <span>18–22</span></label>
+                                    <label class="flex items-center space-x-2"><input type="radio" name="ans_age" value="23-30" class="text-doan-blue"> <span>23–30</span></label>
+                                    <label class="flex items-center space-x-2"><input type="radio" name="ans_age" value="Trên 30" class="text-doan-blue"> <span>Trên 30</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="modal-survey-questions" class="space-y-5"></div>
+
+                    <div class="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
+                        <button type="button" onclick="closeTakeSurveyModal()" class="px-5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
+                            Hủy bỏ
+                        </button>
+                        <button type="submit" class="bg-doan-red hover:bg-red-700 text-white font-bold px-8 py-2.5 rounded-xl text-xs shadow-lg transition flex items-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i> Gửi ý kiến khảo sát
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chân trang Footer chính thức Trung ương Đoàn -->
+    <footer class="bg-doan-darkblue text-white text-xs mt-auto border-t-4 border-t-doan-red">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="space-y-2.5">
+                <div class="flex items-center space-x-3">
+                    <!-- KHUNG LOGO FOOTER (Thay <i> bằng <img src="logo.png"> khi có file ảnh) -->
+                    <div class="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-sm shadow">
+                        <i class="fa-solid fa-star text-doan-yellow"></i>
+                    </div>
+                    <div>
+                        <p class="font-extrabold text-sm tracking-wide uppercase">© 2026 Bản quyền thuộc về Đoàn TNCS Hồ Chí Minh</p>
+                        <p class="text-[11px] text-blue-200">Cổng thông tin Khảo sát trực tuyến khaosat.doanthanhnien.vn</p>
+                    </div>
+                </div>
+                <p class="text-slate-300">Giấy phép số: 44/GP-BC ngày 28/02/2006 của Bộ Văn Hoá - Thông tin </p>
+                <p class="text-slate-300"><strong class="text-white">Địa chỉ:</strong> Số 62 Bà Triệu, Phường Cửa Nam, TP. Hà Nội</p>
+                <p class="text-slate-300"><strong class="text-white">Điện thoại / Fax:</strong> 04-62631871 - Fax: 04-62631875</p>
+                <p class="text-slate-300"><strong class="text-white">Email liên hệ:</strong> <a href="mailto:tuyengiaotwd@gmail.com" class="underline hover:text-white">tuyengiaotwd@gmail.com</a></p>
+            </div>
+            
+            <div class="md:text-right space-y-3 flex flex-col justify-between">
+                <div>
+                    <span class="inline-block px-3 py-1 bg-white/10 rounded-full text-[11px] font-semibold text-blue-200">
+                        Cổng khảo sát số - Trung ương Đoàn
+                    </span>
+                </div>
+                <p class="text-slate-400 text-[11px] leading-relaxed">
+                    Ghi rõ nguồn "Website Trung ương Đoàn - www.doanthanhnien.vn" khi phát hành lại thông tin từ website này.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Liên kết tệp JavaScript logic độc lập -->
+    <script src="app.js"></script>
+</body>
+</html>
